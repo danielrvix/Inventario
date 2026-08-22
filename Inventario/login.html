@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión - Inventario PCAD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+   <link rel="icon" type="image/png" href="img/logo.png">
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-slate-800 mb-6">Inventario PCAD</h2>
+
+    <!-- Mensaje de error -->
+    <div id="loginError" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center"></div>
+
+    <!-- Formulario de Iniciar Sesión -->
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700">Correo Electrónico</label>
+        <input type="email" id="email" required class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700">Contraseña</label>
+        <input type="password" id="password" required class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+      </div>
+      <button type="submit" id="loginSubmitBtn" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <!-- Botón para abrir modal de registro -->
+    <div class="mt-4 text-center">
+      <button id="openRegisterBtn" class="text-sm text-blue-600 hover:underline">
+        ¿No tienes cuenta? Crear cuenta
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal de Registro -->
+  <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-md relative">
+      <h3 class="text-xl font-bold text-slate-800 mb-4">Crear Nueva Cuenta</h3>
+
+      <div id="registerError" class="hidden mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center"></div>
+
+      <form id="registerForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Nombre Completo</label>
+          <input type="text" id="regNombre" required class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Correo Electrónico</label>
+          <input type="email" id="regEmail" required class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Contraseña</label>
+          <input type="password" id="regPassword" required minlength="6" class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Rol</label>
+          <select id="regRol" class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+            <option value="user">Usuario (Lectura / Uso)</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">Acceso</label>
+          <input type="password" id="regSecretKey" required placeholder="Código" class="w-full mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2">
+          <button type="button" id="closeRegisterBtn" class="px-4 py-2 border rounded-md text-slate-600 hover:bg-slate-100">
+            Cancelar
+          </button>
+          <button type="submit" id="regSubmitBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+            Registrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="./login.js"></script>
+</body>
+</html>
