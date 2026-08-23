@@ -5,6 +5,30 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth } from './auth.js';
 
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Previene que aparezca el banner automático predeterminado del navegador en algunos móviles
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Muestra tu propio botón de instalación en la interfaz (ej. en el menú lateral o perfil)
+  const installBtn = document.getElementById('btnInstallApp');
+  if (installBtn) {
+    installBtn.classList.remove('hidden');
+    
+    installBtn.addEventListener('click', async () => {
+      installBtn.classList.add('hidden');
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('El usuario aceptó instalar la PWA');
+      }
+      deferredPrompt = null;
+    });
+  }
+});
+
 // Proteger la página y verificar sesión activa
 auth.protectPage();
 
@@ -470,34 +494,7 @@ function renderHistoryContent(tool) {
   if (countActiveEl) countActiveEl.innerText = activos.length;
   if (countReturnedEl) countReturnedEl.innerText = devueltos.length;
 
-  if (activeContainer) {
-    activeContainer.innerHTML = activos.length === 0 
-      ? `<p class="text-xs text-slate-500 py-4 text-center">No hay préstamos activos para este equipo.</p>`
-      : activos.map(p => `
-        <div class="bg-slate-900 border border-slate-700/60 rounded-lg p-3 flex items-center justify-between gap-2">
-          <div>
-            <p class="font-bold text-sm text-slate-200">${p.funcionario} (${p.cedula})</p>
-            <p class="text-xs text-amber-400">Cantidad: ${p.cantidad} unidad(es) | ${p.fechaPrestamo}</p>
-            ${p.motivo ? `<p class="text-xs text-slate-400 mt-0.5">Motivo: ${p.motivo}</p>` : ''}
-          </div>
-          <button onclick="openReturnModalFromHistory('${tool.id}', '${p.loanId}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs transition shrink-0">
-            📥 Devolver
-          </button>
-        </div>
-      `).join('');
-  }
-
-  if (returnedContainer) {
-    returnedContainer.innerHTML = devueltos.length === 0
-      ? `<p class="text-xs text-slate-500 py-4 text-center">No se registran devoluciones históricas.</p>`
-      : devueltos.map(d => `
-        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 text-xs space-y-1">
-          <p class="font-semibold text-slate-300">${d.funcionario} (${d.cedula})</p>
-          <p class="text-emerald-400">Devueltos: ${d.cantidad} unidad(es) el ${d.fechaDevolucion}</p>
-          ${d.observaciones ? `<p class="text-slate-400">Observación: ${d.observaciones}</p>` : ''}
-        </div>
-      `).join('');
-  }
+  const isAdmin = auth.isAdmin();
 
   if (activeContainer) {
     activeContainer.innerHTML = activos.length === 0 
@@ -516,7 +513,35 @@ function renderHistoryContent(tool) {
         </div>
       `).join('');
   }
-  
+
+  // Limpiamos botón previo en devueltos para evitar duplicados
+  const existingClearReturnedBtn = document.getElementById('clearReturnedBtnAdmin');
+  if (existingClearReturnedBtn) existingClearReturnedBtn.remove();
+
+  if (returnedContainer) {
+    let returnedHtml = devueltos.length === 0
+      ? `<p class="text-xs text-slate-500 py-4 text-center">No se registran devoluciones históricas.</p>`
+      : devueltos.map(d => `
+        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 text-xs space-y-1">
+          <p class="font-semibold text-slate-300">${d.funcionario} (${d.cedula})</p>
+          <p class="text-emerald-400">Devueltos: ${d.cantidad} unidad(es) el ${d.fechaDevolucion}</p>
+          ${d.observaciones ? `<p class="text-slate-400">Observación: ${d.observaciones}</p>` : ''}
+        </div>
+      `).join('');
+
+    // Si es admin y hay elementos devueltos, agregamos el botón de borrado al final de esta pestaña
+if (isAdmin && devueltos.length > 0) {
+      returnedHtml += `
+        <div id="clearReturnedBtnAdmin" class="mt-4 pt-3 border-t border-slate-800 text-right">
+          <button onclick="openSelectReturnModal('${tool.id}')" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 ml-auto">
+            🗑️ Administrar / Borrar Devoluciones
+          </button>
+        </div>
+      `;
+    }
+
+    returnedContainer.innerHTML = returnedHtml;
+  }
 }
 
 // Función especial para cerrar el historial y abrir la devolución simultáneamente
@@ -638,3 +663,123 @@ function setupModalListeners() {
     contentActive?.classList.add('hidden');
   });
 }
+
+// --- FUNCIONES GLOBALES PARA GESTIONAR EL HISTORIAL DE DEVUELTOS ---
+
+window.openSelectReturnModal = (toolId) => {
+  if (!auth.isAdmin()) {
+    alert('Acceso denegado. Se requiere cuenta de administrador.');
+    return;
+  }
+  
+  const tool = tools.find(t => t.id === toolId);
+  if (!tool || !tool.historialDevueltos || tool.historialDevueltos.length === 0) {
+    alert('No hay registros en el historial de devoluciones para este equipo.');
+    return;
+  }
+
+  // Creamos la modal si no existe en el DOM
+  let modal = document.getElementById('selectReturnModal');
+  if (!modal) {
+    const modalHTML = `
+      <div id="selectReturnModal" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full p-6 text-slate-100 shadow-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-amber-400">Seleccionar Devoluciones a Eliminar</h3>
+            <button onclick="window.closeSelectReturnModal()" class="text-slate-400 hover:text-white text-sm">✕</button>
+          </div>
+          <p class="text-xs text-slate-400 mb-4">Selecciona los registros que deseas remover del historial o usa la opción general.</p>
+          
+          <div id="selectReturnList" class="max-h-60 overflow-y-auto space-y-2 mb-4 pr-1">
+            <!-- Dinámico -->
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button onclick="window.toggleSelectAllReturns(true)" class="text-xs text-slate-300 hover:text-white underline">Seleccionar todos</button>
+            <div class="flex gap-2">
+              <button onclick="window.closeSelectReturnModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-semibold">Cancelar</button>
+              <button id="btnDeleteSelected" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-semibold">🗑️ Borrar Seleccionados</button>
+              <button id="btnClearAllReturns" class="px-3 py-1.5 bg-red-950 text-red-400 border border-red-800 hover:bg-red-900 rounded-lg text-xs font-semibold">⚠️ Borrar Todo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    modal = document.getElementById('selectReturnModal');
+  }
+
+  // Rellenar lista con checkboxes
+  const listContainer = document.getElementById('selectReturnList');
+  listContainer.innerHTML = tool.historialDevueltos.map((d, index) => `
+    <label class="flex items-start gap-3 p-2.5 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 rounded-lg cursor-pointer transition">
+      <input type="checkbox" value="${index}" class="return-checkbox mt-1 accent-amber-500">
+      <div class="text-xs">
+        <p class="font-semibold text-slate-200">Funcionario: ${d.funcionario} (${d.cedula}) - ${d.cantidad} un.</p>
+        <p class="text-slate-400">Fecha: ${d.fechaDevolucion}</p>
+        ${d.observaciones ? `<p class="text-slate-500 italic">Obs: ${d.observaciones}</p>` : ''}
+      </div>
+    </label>
+  `).join('');
+
+  // Asignar eventos de los botones internos mediante addEventListener para evitar fallos de onclick en elementos dinámicos
+  document.getElementById('btnDeleteSelected').onclick = () => window.deleteSelectedReturns(toolId);
+  document.getElementById('btnClearAllReturns').onclick = () => window.clearAllReturnedHistory(toolId);
+
+  // Mostrar modal
+  modal.classList.remove('hidden');
+};
+
+window.closeSelectReturnModal = () => {
+  const modal = document.getElementById('selectReturnModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.toggleSelectAllReturns = (select) => {
+  document.querySelectorAll('.return-checkbox').forEach(cb => cb.checked = select);
+};
+
+window.deleteSelectedReturns = async (toolId) => {
+  const checkboxes = document.querySelectorAll('.return-checkbox:checked');
+  if (checkboxes.length === 0) {
+    alert('Por favor, seleccione al menos un registro para eliminar.');
+    return;
+  }
+
+  if (!confirm(`¿Desea eliminar del historial los ${checkboxes.length} registros seleccionados?`)) return;
+
+  const tool = tools.find(t => t.id === toolId);
+  if (!tool) return;
+
+  const indicesToDrop = Array.from(checkboxes).map(cb => parseInt(cb.value));
+  const nuevoHistorial = tool.historialDevueltos.filter((_, idx) => !indicesToDrop.includes(idx));
+
+  try {
+    await updateDoc(doc(db, "inventario", toolId), {
+      historialDevueltos: nuevoHistorial
+    });
+    alert('✅ Registros seleccionados eliminados correctamente.');
+    window.closeSelectReturnModal();
+  } catch (error) {
+    console.error("Error al eliminar registros seleccionados:", error);
+    alert('❌ Ocurrió un error al actualizar Firestore.');
+  }
+};
+
+window.clearAllReturnedHistory = async (toolId) => {
+  const tool = tools.find(t => t.id === toolId);
+  if (!tool) return;
+
+  if (!confirm(`⚠️ ¿Está seguro de borrar TODO el historial de devoluciones de "${tool.nombre}"?`)) return;
+
+  try {
+    await updateDoc(doc(db, "inventario", toolId), {
+      historialDevueltos: []
+    });
+    alert('✅ Historial de devoluciones vaciado por completo.');
+    window.closeSelectReturnModal();
+  } catch (error) {
+    console.error("Error al vaciar historial:", error);
+    alert('❌ Ocurrió un error al procesar la solicitud.');
+  }
+};

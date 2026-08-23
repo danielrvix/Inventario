@@ -6,6 +6,13 @@
   <title>Sistema de Control de Inventario</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="img/logo.png">
   <!-- Firebase SDKs -->
    <!-- En lugar de o junto con firestore.js -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -24,6 +31,9 @@
         <div>
           <h1 class="text-lg font-bold text-slate-100">Control de Inventario y Equipos</h1>
           <p class="text-xs text-slate-400">Gestión de stock, préstamos y asignaciones</p>
+            <button id="btnInstallApp" class="hidden px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-2">
+  📲 Instalar Aplicación
+</button>
         </div>
       </div>
 
@@ -283,10 +293,10 @@
 
       <div class="flex border-b border-slate-700/80">
         <button id="btn-tab-active" onclick="switchHistoryTab('active')" class="py-2 px-4 text-xs font-semibold border-b-2 border-amber-400 text-amber-400 transition-all flex items-center gap-1.5">
-          🔴 Préstamos Activos (<span id="countHistoryActive">0</span>)
+          Préstamos Activos (<span id="countHistoryActive">0</span>)
         </button>
         <button id="btn-tab-returned" onclick="switchHistoryTab('returned')" class="py-2 px-4 text-xs font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all flex items-center gap-1.5">
-          🟢 Historial Devueltos (<span id="countHistoryReturned">0</span>)
+          Historial Devueltos (<span id="countHistoryReturned">0</span>)
         </button>
       </div>
 
@@ -300,8 +310,16 @@
       </div>
     </div>
   </div>
+  
 
   <!-- Cargar lógica principal con soporte de ES Modules -->
-  <script type="module" src="app.js"></script>
+  <script type="module" src="app.js">
+  if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+      .catch(err => console.log('Error al registrar Service Worker:', err));
+  });
+}</script>
 </body>
 </html>
