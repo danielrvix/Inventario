@@ -6,7 +6,13 @@ import {
 import { auth } from './auth.js';
 
 let deferredPrompt;
-
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('Service Worker registrado con éxito', reg))
+      .catch((err) => console.log('Error al registrar el Service Worker', err));
+  });
+}
 window.addEventListener('beforeinstallprompt', (e) => {
   // Previene que aparezca el banner automático predeterminado del navegador en algunos móviles
   e.preventDefault();
