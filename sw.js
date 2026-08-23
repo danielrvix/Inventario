@@ -1,3 +1,12 @@
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
+});
+
 self.addEventListener('fetch', (event) => {
-  // Aquí puedes manejar la caché de tu web si lo deseas
+  // Deja pasar todas las solicitudes a la red (necesario para Firebase y GitHub Pages)
+  event.respondWith(fetch(event.request));
 });
