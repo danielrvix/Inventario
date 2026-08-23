@@ -316,11 +316,6 @@
   <!-- Cargar lógica principal con soporte de ES Modules -->
   <script type="module" src="app.js">
   if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
-      .catch(err => console.log('Error al registrar Service Worker:', err));
-  });
-}</script>
+  window.addEventListener('load', () =></script>
 </body>
 </html>
