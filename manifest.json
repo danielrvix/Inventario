@@ -14,8 +14,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "./login.html",
-  "scope": "./",
+  "start_url": "/Inventario/",
+  "scope": "/Inventario/",
   "background_color": "#fffafa",
   "display": "standalone",
   "theme_color": "#f8b4b4",
