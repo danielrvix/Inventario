@@ -13,24 +13,36 @@ if ('serviceWorker' in navigator) {
       .catch((err) => console.log('Error al registrar el Service Worker', err));
   });
 }
+// 1. Registrar el Service Worker (¡Debe ir fuera de cualquier otro evento!)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then((reg) => console.log('Service Worker registrado con éxito', reg))
+      .catch((err) => console.log('Error al registrar el Service Worker', err));
+  });
+}
+
+// 2. Manejar el botón de instalación de la PWA
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Previene que aparezca el banner automático predeterminado del navegador en algunos móviles
+  // Previene que aparezca el banner automático predeterminado del navegador
   e.preventDefault();
   deferredPrompt = e;
 
-  // Muestra tu propio botón de instalación en la interfaz (ej. en el menú lateral o perfil)
+  // Muestra tu propio botón de instalación en la interfaz
   const installBtn = document.getElementById('btnInstallApp');
   if (installBtn) {
     installBtn.classList.remove('hidden');
     
     installBtn.addEventListener('click', async () => {
       installBtn.classList.add('hidden');
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        console.log('El usuario aceptó instalar la PWA');
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('El usuario aceptó instalar la PWA');
+        }
+        deferredPrompt = null;
       }
-      deferredPrompt = null;
     });
   }
 });
