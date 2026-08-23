@@ -782,4 +782,45 @@ window.clearAllReturnedHistory = async (toolId) => {
     console.error("Error al vaciar historial:", error);
     alert('❌ Ocurrió un error al procesar la solicitud.');
   }
+  // --- REGISTRO DE SERVICE WORKER PARA PWA ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+      .catch(err => console.log('Error al registrar Service Worker:', err));
+  });
+}
+
+// --- CAPTURA DEL BOTÓN DE INSTALACIÓN ---
+let deferredPrompt;
+const installBtn = document.getElementById('btnInstallApp');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Evita que aparezca el banner automático del navegador
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Muestra el botón si estaba oculto
+  if (installBtn) installBtn.classList.remove('hidden');
+});
+
+if (installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      alert('Tu navegador no permite la instalación automática o la app ya está instalada. Puedes usar el menú del navegador (los 3 puntos) y seleccionar "Instalar aplicación".');
+      return;
+    }
+    
+    installBtn.classList.add('hidden');
+    deferredPrompt.prompt();
+    
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('Usuario aceptó instalar la PWA');
+    } else {
+      console.log('Usuario canceló la instalación');
+    }
+    deferredPrompt = null;
+  });
+}
 };
